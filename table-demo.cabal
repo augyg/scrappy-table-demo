@@ -1,0 +1,17 @@
+cabal-version:      2.4
+name:               table-demo
+version:            0.1.0.0
+synopsis:           Demo of scraping HTML tables with scrappy
+
+license:            NONE
+author:             galen
+maintainer:         galen.sprout@gmail.com
+
+executable table-demo
+    main-is:          Main.hs
+    build-depends:    base
+                    , scrappy
+                    , parsec
+                    , containers
+    hs-source-dirs:   .
+    default-language: Haskell2010
