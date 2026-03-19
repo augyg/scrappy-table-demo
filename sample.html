@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TechCorp Employee Directory</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+    h1 { color: #333; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; background: white; }
+    th, td { border: 1px solid #ddd; padding: 12px 15px; text-align: left; }
+    th { background-color: #4a90d9; color: white; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    .department-header { background: #eee; font-weight: bold; }
+    a { color: #4a90d9; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .status-active { color: green; }
+    .status-onleave { color: orange; }
+    .footer { margin-top: 30px; font-size: 0.9em; color: #666; }
+  </style>
+</head>
+<body>
+  <h1>TechCorp Employee Directory</h1>
+  <p>Last updated: March 2026 | Total employees: 12</p>
+
+  <h2>Engineering</h2>
+  <table id="engineering">
+    <tr><th>Name</th><th>Role</th><th>Location</th><th>Status</th><th>Profile</th></tr>
+    <tr><td>Alice Chen</td><td>Senior Engineer</td><td>San Francisco</td><td class="status-active">Active</td><td><a href="/employees/101">View</a></td></tr>
+    <tr><td>Bob Martinez</td><td>Backend Developer</td><td>Austin</td><td class="status-active">Active</td><td><a href="/employees/102">View</a></td></tr>
+    <tr><td>Carol Kim</td><td>Frontend Developer</td><td>Seattle</td><td class="status-onleave">On Leave</td><td><a href="/employees/103">View</a></td></tr>
+    <tr><td>Dave Patel</td><td>DevOps Engineer</td><td>Remote</td><td class="status-active">Active</td><td><a href="/employees/104">View</a></td></tr>
+  </table>
+
+  <h2>Design</h2>
+  <table id="design">
+    <tr><th>Name</th><th>Role</th><th>Location</th><th>Status</th><th>Profile</th></tr>
+    <tr><td>Eve Johnson</td><td>Lead Designer</td><td>New York</td><td class="status-active">Active</td><td><a href="/employees/201">View</a></td></tr>
+    <tr><td>Frank Liu</td><td>UX Researcher</td><td>London</td><td class="status-active">Active</td><td><a href="/employees/202">View</a></td></tr>
+    <tr><td>Grace Okafor</td><td>Visual Designer</td><td>Toronto</td><td class="status-onleave">On Leave</td><td><a href="/employees/203">View</a></td></tr>
+  </table>
+
+  <h2>Management</h2>
+  <table id="management">
+    <tr><th>Name</th><th>Role</th><th>Location</th><th>Status</th><th>Profile</th></tr>
+    <tr><td>Henry Wu</td><td>Engineering Manager</td><td>San Francisco</td><td class="status-active">Active</td><td><a href="/employees/301">View</a></td></tr>
+    <tr><td>Irene Costa</td><td>Product Manager</td><td>Berlin</td><td class="status-active">Active</td><td><a href="/employees/302">View</a></td></tr>
+  </table>
+
+  <h2>Recent Projects</h2>
+  <ul id="projects"><li class="project">Platform Migration (Q1 2026)</li><li class="project">Mobile App Redesign (Q2 2026)</li><li class="project">API Gateway v2 (Q1 2026)</li><li class="project">Customer Dashboard (Q3 2026)</li><li class="project">Internal Tools Refresh (Q2 2026)</li></ul>
+
+  <div class="footer">
+    <p>Contact: <a href="mailto:hr@techcorp.com">hr@techcorp.com</a> | <a href="/admin">Admin Panel</a></p>
+  </div>
+</body>
+</html>

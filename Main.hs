@@ -4,9 +4,11 @@ import Scrappy.Scrape (scrape, scrapeFirst', ScraperT)
 import Scrappy.Elem.SimpleElemParser (el)
 import Scrappy.Elem.TreeElemParser (table, htmlGroup)
 import Scrappy.Elem.Types (ElementRep(..), GroupHtml(..), TreeHTML(..), Elem'(..), ungroup)
+import Scrappy.Requests (getHtml')
 
 import Data.Maybe (fromMaybe)
 import qualified Data.Map as Map
+import System.Environment (getArgs)
 
 
 -- Sample HTML: simple single-column table (works with tree-based `table` parser)
@@ -145,4 +147,142 @@ main = do
     Nothing -> putStrLn "  (none)"
     Just spans -> mapM_ (\s -> putStrLn $ "  " <> innerHtmlFull s) spans
 
+  ---------------------------------------------------------
+  -- Demo 6: Scrape sample.html - extract all data rows
+  ---------------------------------------------------------
+  putStrLn "\n--- Demo 6: Scraping sample.html - all employee rows ---"
+  html <- readFile "sample.html"
+  putStrLn $ "Loaded sample.html (" <> show (length html) <> " chars)"
+  case scrape (el "tr" []) html of
+    Nothing -> putStrLn "No rows found!"
+    Just rows -> do
+      let dataRows = filter (hasTag "td") rows
+      putStrLn $ "Found " <> show (length dataRows) <> " data rows across all tables:"
+      mapM_ (\row -> do
+        let cells = fromMaybe [] $ scrape (el "td" []) (innerHtmlFull row)
+        let cellTexts = map innerHtmlFull cells
+        putStrLn $ "  " <> show cellTexts
+        ) dataRows
+
+  putStrLn ""
+
+  ---------------------------------------------------------
+  -- Demo 7: Scrape sample.html - extract profile links
+  ---------------------------------------------------------
+  putStrLn "--- Demo 7: Scraping sample.html - employee profile links ---"
+  case scrape (el "a" []) html of
+    Nothing -> putStrLn "No links found!"
+    Just links -> do
+      let profileLinks = filter (\l -> maybe False (isPrefixOf' "/employees/") (Map.lookup "href" (_attrs l))) links
+      putStrLn $ "Found " <> show (length profileLinks) <> " profile links:"
+      mapM_ (\l -> do
+        let href = fromMaybe "?" $ Map.lookup "href" (_attrs l)
+        putStrLn $ "  " <> innerHtmlFull l <> " -> " <> href
+        ) profileLinks
+
+  putStrLn ""
+
+  ---------------------------------------------------------
+  -- Demo 8: Scrape sample.html - filter by attribute (active vs on-leave)
+  ---------------------------------------------------------
+  putStrLn "--- Demo 8: Scraping sample.html - status filtering ---"
+  case scrape (el "td" [("class", "status-active")]) html of
+    Nothing -> putStrLn "Active employees: 0"
+    Just actives -> putStrLn $ "Active employees: " <> show (length actives)
+  case scrape (el "td" [("class", "status-onleave")]) html of
+    Nothing -> putStrLn "On leave: 0"
+    Just onleave -> putStrLn $ "On leave: " <> show (length onleave)
+
+  putStrLn ""
+
+  ---------------------------------------------------------
+  -- Demo 9: Scrape sample.html - project list via htmlGroup
+  ---------------------------------------------------------
+  putStrLn "--- Demo 9: Scraping sample.html - project list ---"
+  let projectGroup = htmlGroup (Just ["li"]) Nothing [("class", Just "project")]
+                       :: ScraperT (GroupHtml TreeHTML String)
+  case scrapeFirst' projectGroup html of
+    Nothing -> putStrLn "No projects found!"
+    Just (GroupHtml items count _) -> do
+      putStrLn $ "Found " <> show count <> " projects:"
+      mapM_ (\item -> putStrLn $ "  - " <> innerText' item) items
+
+  putStrLn ""
+
+  ---------------------------------------------------------
+  -- Demo 10: Scrape sample.html - per-department breakdown
+  ---------------------------------------------------------
+  putStrLn "--- Demo 10: Scraping sample.html - per department ---"
+  let departments = ["engineering", "design", "management"]
+  mapM_ (\dept -> do
+    case scrape (el "table" [("id", dept)]) html of
+      Nothing -> putStrLn $ "  " <> dept <> ": not found"
+      Just (t:_) -> do
+        let dataRows = filter (hasTag "td") $ fromMaybe [] $ scrape (el "tr" []) (innerHtmlFull t)
+        let names = map (innerHtmlFull . head) $ filter (not . null) $
+                    map (fromMaybe [] . scrape (el "td" []) . innerHtmlFull) dataRows
+        putStrLn $ "  " <> dept <> ": " <> show names
+      Just [] -> putStrLn $ "  " <> dept <> ": empty"
+    ) departments
+
+  ---------------------------------------------------------
+  -- Demo 11: Scrape from a live URL
+  ---------------------------------------------------------
+  putStrLn "\n--- Demo 11: Scraping from URL ---"
+  args <- getArgs
+  case args of
+    (url:_) -> do
+      putStrLn $ "Fetching: " <> url
+      liveHtml <- getHtml' url
+      putStrLn $ "Got " <> show (length liveHtml) <> " chars"
+
+      putStrLn "\nAll links on page:"
+      case scrape (el "a" []) liveHtml of
+        Nothing -> putStrLn "  (none)"
+        Just allLinks -> do
+          putStrLn $ "  Found " <> show (length allLinks) <> " links"
+          mapM_ (\l -> do
+            let href = fromMaybe "" $ Map.lookup "href" (_attrs l)
+            let text = innerHtmlFull l
+            let label = if length text > 60 then take 60 text <> "..." else text
+            putStrLn $ "  " <> label <> " -> " <> href
+            ) (take 15 allLinks)
+          if length allLinks > 15
+            then putStrLn $ "  ... and " <> show (length allLinks - 15) <> " more"
+            else pure ()
+
+      putStrLn "\nAll tables on page:"
+      case scrape (el "table" []) liveHtml of
+        Nothing -> putStrLn "  No tables found"
+        Just tables -> do
+          putStrLn $ "  Found " <> show (length tables) <> " tables"
+          mapM_ (\t -> do
+            let dataRows = filter (hasTag "td") $ fromMaybe [] $ scrape (el "tr" []) (innerHtmlFull t)
+            putStrLn $ "  Table with " <> show (length dataRows) <> " data rows"
+            mapM_ (\row -> do
+              let cells = fromMaybe [] $ scrape (el "td" []) (innerHtmlFull row)
+              let cellTexts = map (\c -> let t' = innerHtmlFull c in if length t' > 40 then take 40 t' <> "..." else t') cells
+              putStrLn $ "    " <> show cellTexts
+              ) (take 5 dataRows)
+            if length dataRows > 5
+              then putStrLn $ "    ... and " <> show (length dataRows - 5) <> " more rows"
+              else pure ()
+            ) tables
+
+    [] -> putStrLn "  (skipped - pass a URL as argument to try it)"
+           >> putStrLn "  Usage: cabal run table-demo -- \"https://example.com\""
+
   putStrLn "\n=== Done ==="
+
+
+-- Helpers
+
+hasTag :: String -> Elem' String -> Bool
+hasTag tag e = case scrape (el tag []) (innerHtmlFull e) of
+  Just (_:_) -> True
+  _          -> False
+
+isPrefixOf' :: String -> String -> Bool
+isPrefixOf' [] _ = True
+isPrefixOf' _ [] = False
+isPrefixOf' (p:ps) (x:xs) = p == x && isPrefixOf' ps xs
